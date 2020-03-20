@@ -1,0 +1,19 @@
+simxAddDrawingObject_cubes
+simxCheckDistance
+simxGetObjectName
+ simxGetObjectPose
+
+ simxGetVisionSensorDepthBuffer
+ simxGetVisionSensorImage
+
+ simxLoadModelFromFile
+
+simxRemoveObjects
+
+simxSetObjectParent
+
+
+ simxSpinOnce
+
+
+ simxStartSimulation
