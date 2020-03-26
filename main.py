@@ -6,6 +6,8 @@ import b0RemoteApi
 import sys
 import random
 import signal
+import numpy as np
+import math
 
 coppelia_path = '/home/ljmanso/software/coppeliasim/'
 
@@ -20,8 +22,9 @@ signal.signal(signal.SIGINT, please_exit)
 # Wall
 #  
 class Wall(object):
-	def __init__(self, handle):
+	def __init__(self, constructor, handle):
 		super(Wall, self).__init__()
+		self.c = constructor
 		self.handle = handle
 
 #
@@ -33,8 +36,8 @@ class Human(object):
 		self.c = constructor
 		self.handle = handle
 		self.dummy_handle = dummy_handle
-	def move(self, x, z, angle):
-		self.c.set_object_position(self.dummy_handle, [x, z, -1.])
+	def move(self, x, y, angle):
+		self.c.set_object_position(self.dummy_handle, [x, y, -1.])
 
 
 class TheConstructor(object):
@@ -46,9 +49,9 @@ class TheConstructor(object):
 		print('Client', self.client)
 		print('-------------------------------')
 
-	def create_human(self, x, z, angle):
+	def create_human(self, x, y, angle):
 		model = 'models/people/path planning Bill.ttm'
-		human_handle = self.create_model(model, x, 0, z, 0, 0, angle)
+		human_handle = self.create_model(model, x, y, 0, 0, 0, angle)
 		print('Got human handle {}.'.format(human_handle))
 		ret = self.client.simxGetObjectsInTree(human_handle, 'sim.object_dummy_type', 1+2, self.client.simxServiceCall())
 		dummy_handle = None
@@ -63,7 +66,15 @@ class TheConstructor(object):
 		return Human(self, human_handle, dummy_handle)
 
 	def create_wall(self, p1, p2):
-		
+		model = 'models/infrastructure/walls/80cm high walls/wall section 100cm.ttm'
+		x = 0.5*(p1[0] + p2[0])
+		y = 0.5*(p1[1] + p2[1])
+		angle = math.atan2(p1[0]-p2[0], p1[0]-p2[0])
+		wall_handle = self.create_model(model, x, y, 0, 0, 0, angle)
+		print('Got wall handle {}.'.format(wall_handle))
+		ret = self.client.simxGetObjectMatrix(wall_handle, -1, self.client.simxServiceCall())
+		print(ret)
+		return Wall(self, wall_handle)
 
 	def create_model(self, model, x, y, z, rx, ry, rz):
 		full_path = coppelia_path + '/' + model
