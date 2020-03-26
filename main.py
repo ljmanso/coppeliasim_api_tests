@@ -7,7 +7,7 @@ import sys
 import random
 import signal
 import numpy as np
-import math
+from math import cos, sin, atan2
 
 coppelia_path = '/home/ljmanso/software/coppeliasim/'
 
@@ -66,13 +66,38 @@ class TheConstructor(object):
 		return Human(self, human_handle, dummy_handle)
 
 	def create_wall(self, p1, p2):
+		def get_transform_matrix(x, y, angle, scalex, scaley, scalez):
+			scale_matrix = np.matrix([[1.0, 0.,     0.,   0.],
+			                          [0., 100.,     0.,   0.],
+								      [0.,         0., 0.1,   0.],
+									  [0.,         0.,     0.,   10.]])
+			rotat_matrix = np.matrix([[cos(angle), -sin(angle), 0., 0.],
+									  [sin(angle),  cos(angle), 0., 0.],
+									  [        0.,          0., 1., 0.],
+									  [        0.,          0., 0., 1.]])
+			trans_matrix = np.matrix([[ 1., 0., 0., x ],
+									  [ 0., 1., 0., y ],
+									  [ 0., 0., 1., 0.4],
+									  [ 0., 0., 0., 1.]])
+			# matrix = trans_matrix * scale_matrix * rotat_matrix
+			# matrix = rotat_matrix
+			matrix = scale_matrix
+			# matrix = trans_matrix # WORKS
+			return matrix.flatten().tolist()[0]
+
 		model = 'models/infrastructure/walls/80cm high walls/wall section 100cm.ttm'
 		x = 0.5*(p1[0] + p2[0])
 		y = 0.5*(p1[1] + p2[1])
-		angle = math.atan2(p1[0]-p2[0], p1[0]-p2[0])
-		wall_handle = self.create_model(model, x, y, 0, 0, 0, angle)
+		angle = atan2(p1[0]-p2[0], p1[0]-p2[0])
+		sx = sy = sz = 1.
+		wall_handle = self.create_model(model, 0, 0, 0, 0, 0, 0)
 		print('Got wall handle {}.'.format(wall_handle))
 		ret = self.client.simxGetObjectMatrix(wall_handle, -1, self.client.simxServiceCall())
+		print('GET MATRIX {}'.format(ret))
+		M = get_transform_matrix(x, y, angle, sx, sy, sz)
+		print('M', M)
+		ret = self.client.simxSetObjectMatrix(wall_handle, -1, M, self.client.simxServiceCall())
+		print('SET MATRIX {}'.format(ret))
 		print(ret)
 		return Wall(self, wall_handle)
 
@@ -102,23 +127,26 @@ class TheConstructor(object):
 
 if __name__ == '__main__':
 	constructor = TheConstructor()
-	a = constructor.create_human(5.*(random.random()-0.5),
-	                         5.*(random.random()-0.5),
-						     2.*3.1415926535*random.random())
-	b = constructor.create_human(5.*(random.random()-0.5),
-	                         5.*(random.random()-0.5),
-							 2.*3.1415926535*random.random())
+	# a = constructor.create_human(5.*(random.random()-0.5),
+	#                          5.*(random.random()-0.5),
+	# 					     2.*3.1415926535*random.random())
+	# b = constructor.create_human(5.*(random.random()-0.5),
+	#                          5.*(random.random()-0.5),
+	# 						 2.*3.1415926535*random.random())
 
-	wall1 = constructor.create_wall([5., 5.], [5.,-.5])
+	wall1 = constructor.create_wall([5., 5.], [5.,-5.])
+	wall2 = constructor.create_wall([5., -5.], [-5.,-5.])
+	wall3 = constructor.create_wall([-5., -5.], [-5.,5.])
+	wall4 = constructor.create_wall([-5., 5.], [5.,5.])
 
 
 	while not exit_flag:
-		a.move(5.*(random.random()-0.5), 5.*(random.random()-0.5), None)
-		b.move(5.*(random.random()-0.5), 5.*(random.random()-0.5), None)
+		# a.move(5.*(random.random()-0.5), 5.*(random.random()-0.5), None)
+		# b.move(5.*(random.random()-0.5), 5.*(random.random()-0.5), None)
 
 		for i in range(20):
 			time.sleep(0.5)
-			constructor.client.simxSpinOnce()
+			# constructor.client.simxSpinOnce()
 			if exit_flag:
 				break
 
