@@ -18,6 +18,23 @@ def please_exit(sig, frame):
 	exit_flag = True
 signal.signal(signal.SIGINT, please_exit)
 
+
+def get_transform_matrix(x, y, z, angle, scalex=1., scaley=1., scalez=1.):
+	scale_matrix = np.matrix([[1.*scalex,    0.,        0.,   0.],
+						      [0.,    1.*scaley,        0.,   0.],
+							  [0.,           0., 1.*scalez,   0.],
+							  [0.,           0.,        0.,   1.]])
+	rotate_matrix = np.matrix([[cos(angle), -sin(angle), 0., 0.],
+							   [sin(angle),  cos(angle), 0., 0.],
+							   [        0.,          0., 1., 0.],
+							   [        0.,          0., 0., 1.]])
+	translate_matrix = np.matrix([[ 1., 0., 0., x ],
+			 				      [ 0., 1., 0., y ],
+			                      [ 0., 0., 1., z],
+							      [ 0., 0., 0., 1.]])
+	matrix = translate_matrix * rotate_matrix * scale_matrix
+	return matrix.flatten().tolist()[0]
+
 #
 # Wall
 #  
@@ -39,7 +56,7 @@ class Human(object):
 	def move(self, x, y, angle):
 		self.c.set_object_position(self.dummy_handle, [x, y, -1.])
 
-
+# TheConstructor
 class TheConstructor(object):
 	def __init__(self):
 		super(TheConstructor, self).__init__()
@@ -49,57 +66,105 @@ class TheConstructor(object):
 		print('Client', self.client)
 		print('-------------------------------')
 
+	def get_objects_children(self, parent, children_type):
+		ret = self.client.simxGetObjectsInTree(parent, children_type, 1+2, self.client.simxServiceCall())
+		print('Got children query {}.'.format(ret))
+		if ret[0] is not True:
+			print('Error getting human\'s children {}.'.format(parent))
+			sys.exit(-1)
+		return ret[1]
+
 	def create_human(self, x, y, angle):
 		model = 'models/people/path planning Bill.ttm'
 		human_handle = self.create_model(model, x, y, 0, 0, 0, angle)
 		print('Got human handle {}.'.format(human_handle))
-		ret = self.client.simxGetObjectsInTree(human_handle, 'sim.object_dummy_type', 1+2, self.client.simxServiceCall())
-		dummy_handle = None
-		while dummy_handle is None:
-			print('Got children query {}.'.format(ret))
-			if ret[0] is not True:
-				print('Error getting human\'s children {}.'.format(human_handle))
-				sys.exit(-1)
-			print(ret)
-			if len(ret[1]) > 0:
-				dummy_handle = ret[1][0]
+		dummy_handle = self.get_objects_children(human_handle, 'sim.object_dummy_type')[0]
 		return Human(self, human_handle, dummy_handle)
 
-	def create_wall(self, p1, p2):
-		def get_transform_matrix(x, y, angle, scalex, scaley, scalez):
-			scale_matrix = np.matrix([[1.0, 0.,     0.,   0.],
-			                          [0., 100.,     0.,   0.],
-								      [0.,         0., 0.1,   0.],
-									  [0.,         0.,     0.,   10.]])
-			rotat_matrix = np.matrix([[cos(angle), -sin(angle), 0., 0.],
-									  [sin(angle),  cos(angle), 0., 0.],
-									  [        0.,          0., 1., 0.],
-									  [        0.,          0., 0., 1.]])
-			trans_matrix = np.matrix([[ 1., 0., 0., x ],
-									  [ 0., 1., 0., y ],
-									  [ 0., 0., 1., 0.4],
-									  [ 0., 0., 0., 1.]])
-			# matrix = trans_matrix * scale_matrix * rotat_matrix
-			# matrix = rotat_matrix
-			matrix = scale_matrix
-			# matrix = trans_matrix # WORKS
-			return matrix.flatten().tolist()[0]
 
+
+	# def create_wall(self, p1, p2):
+	# 	def compute_step(distance):
+	# 		if distance >= 0.2-0.00001:
+	# 			return 0.2
+	# 		elif distance >= 0.1-0.00001:
+	# 			return 0.1
+	# 		elif distance >= 0.05-0.00001:
+	# 			return 0.05
+	# 		elif distance >= 0.025-0.00001:
+	# 			return 0.025
+	# 		else:
+	# 			return 0.005
+	# 	x = np.array(p1)
+	# 	p2 = np.array(p2)
+
+	# 	dist = np.linalg.norm(p2-x)
+	# 	while dist > 0.05:
+	# 		step = compute_step(dist)
+	# 		vector = (p2 - x)/dist*step
+	# 		x_n = x + vector
+	# 		x, y = 0.5*(x[0] + x_n[0]), 0.5*(x[1] + x_n[1])
+	# 		print(vector)
+	# 		angle = atan2(vector[0], vector[1])
+	# 		self.create_wall_segment(x, y, angle, step)
+	# 		x = x_n
+	# 		dist = np.linalg.norm(p2-x)
+
+	# def create_wall_segment(self, x, y, angle, length):
+	# 	if length >= 0.2-0.00001:
+	# 		model = 'models/infrastructure/walls/80cm high walls/wall section 200cm.ttm'
+	# 	elif length >= 0.1-0.00001:
+	# 		model = 'models/infrastructure/walls/80cm high walls/wall section 100cm.ttm'
+	# 	elif length >= 0.05-0.00001:
+	# 		model = 'models/infrastructure/walls/80cm high walls/wall section 50cm.ttm'
+	# 	elif length >= 0.025-0.00001:
+	# 		model = 'models/infrastructure/walls/80cm high walls/wall section 25cm.ttm'
+	# 	else:
+	# 		model = 'models/infrastructure/walls/80cm high walls/wall section 5cm.ttm'
+	# 	print(model)
+	# 	wall_handle = self.create_model(model, 0, 0, 0, 0, 0, 0)
+	# 	print('Got wall handle {}.'.format(wall_handle))
+	# 	M = get_transform_matrix(x, y, 0.4, angle, 1., 1., 1.)
+	# 	print('M', M)
+	# 	ret = self.client.simxSetObjectMatrix(wall_handle, -1, M, self.client.simxServiceCall())
+	# 	print('SET MATRIX {}'.format(ret))
+	# 	# child = self.get_objects_children(wall_handle, 'sim.object_shape_type')[0]
+	# 	# print('Got child wall handle {}.'.format(child))
+	# 	# M = get_transform_matrix(0., 0., 0., 0., 1000., 1., 1.)
+	# 	# print('M', M)
+	# 	# ret = self.client.simxSetObjectMatrix(child, wall_handle, M, self.client.simxServiceCall())
+	# 	# print('SET MATRIX {}'.format(ret))
+	# 	# print(ret)
+	# 	return Wall(self, wall_handle)
+
+
+	def create_wall(self, p1, p2):
 		model = 'models/infrastructure/walls/80cm high walls/wall section 100cm.ttm'
-		x = 0.5*(p1[0] + p2[0])
-		y = 0.5*(p1[1] + p2[1])
-		angle = atan2(p1[0]-p2[0], p1[0]-p2[0])
-		sx = sy = sz = 1.
+		x, y = 0.5*(p1[0] + p2[0]), 0.5*(p1[1] + p2[1])
+		angle = atan2(p2[1]-p1[1], p2[0]-p1[0])
+		length = np.linalg.norm(np.array(p2)-np.array(p1))
 		wall_handle = self.create_model(model, 0, 0, 0, 0, 0, 0)
 		print('Got wall handle {}.'.format(wall_handle))
-		ret = self.client.simxGetObjectMatrix(wall_handle, -1, self.client.simxServiceCall())
-		print('GET MATRIX {}'.format(ret))
-		M = get_transform_matrix(x, y, angle, sx, sy, sz)
+		M = get_transform_matrix(x, y, 0.4, angle, 1., 1., 1.)
 		print('M', M)
 		ret = self.client.simxSetObjectMatrix(wall_handle, -1, M, self.client.simxServiceCall())
 		print('SET MATRIX {}'.format(ret))
-		print(ret)
+
+		# self.client.simxExecuteScriptString('sim.scaleObject({},{},{},{})'.format(wall_handle, 10.*length,0.1,1.),
+										# self.client.simxServiceCall())
+
+		child = self.get_objects_children(wall_handle, 'sim.object_shape_type')[0]
+		print('Got child wall handle {}.'.format(child))
+		ret = self.client.simxExecuteScriptString('sim.scaleObject({},{},{},{},0)'.format(child, 10.*length,0.1,1.),
+										self.client.simxServiceCall())
+		# M = get_transform_matrix(0., 0., 0., 0., 1000., 1., 1.)
+		# print('M', M)
+		# ret = self.client.simxSetObjectMatrix(child, wall_handle, M, self.client.simxServiceCall())
+		# print('SET MATRIX {}'.format(ret))
+		# print(ret)
 		return Wall(self, wall_handle)
+
+
 
 	def create_model(self, model, x, y, z, rx, ry, rz):
 		full_path = coppelia_path + '/' + model
@@ -127,26 +192,26 @@ class TheConstructor(object):
 
 if __name__ == '__main__':
 	constructor = TheConstructor()
-	# a = constructor.create_human(5.*(random.random()-0.5),
-	#                          5.*(random.random()-0.5),
-	# 					     2.*3.1415926535*random.random())
-	# b = constructor.create_human(5.*(random.random()-0.5),
-	#                          5.*(random.random()-0.5),
-	# 						 2.*3.1415926535*random.random())
+	a = constructor.create_human(15.*(random.random()-0.5),
+	                         15.*(random.random()-0.5),
+						     2.*3.1415926535*random.random())
+	b = constructor.create_human(15.*(random.random()-0.5),
+	                         15.*(random.random()-0.5),
+							 2.*3.1415926535*random.random())
 
-	wall1 = constructor.create_wall([5., 5.], [5.,-5.])
-	wall2 = constructor.create_wall([5., -5.], [-5.,-5.])
-	wall3 = constructor.create_wall([-5., -5.], [-5.,5.])
-	wall4 = constructor.create_wall([-5., 5.], [5.,5.])
+	constructor.create_wall([5., 5.], [5.,-5.])
+	constructor.create_wall([5., -5.], [-5.,-5.])
+	constructor.create_wall([-5., -5.], [-5.,5.])
+	constructor.create_wall([-5., 5.], [5.,5.])
 
 
 	while not exit_flag:
-		# a.move(5.*(random.random()-0.5), 5.*(random.random()-0.5), None)
-		# b.move(5.*(random.random()-0.5), 5.*(random.random()-0.5), None)
+		a.move(15.*(random.random()-0.5), 15.*(random.random()-0.5), None)
+		b.move(15.*(random.random()-0.5), 15.*(random.random()-0.5), None)
 
 		for i in range(20):
 			time.sleep(0.5)
-			# constructor.client.simxSpinOnce()
+			constructor.client.simxSpinOnce()
 			if exit_flag:
 				break
 
