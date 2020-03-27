@@ -61,7 +61,6 @@ class TheConstructor(object):
 	def __init__(self):
 		super(TheConstructor, self).__init__()
 		self.client = b0RemoteApi.RemoteApiClient('b0RemoteApi_pythonClient','b0RemoteApiAddOn')
-		self.client.simxStartSimulation('dddd')
 		print('-------------------------------')
 		print('Client', self.client)
 		print('-------------------------------')
@@ -80,62 +79,6 @@ class TheConstructor(object):
 		print('Got human handle {}.'.format(human_handle))
 		dummy_handle = self.get_objects_children(human_handle, 'sim.object_dummy_type')[0]
 		return Human(self, human_handle, dummy_handle)
-
-
-
-	# def create_wall(self, p1, p2):
-	# 	def compute_step(distance):
-	# 		if distance >= 0.2-0.00001:
-	# 			return 0.2
-	# 		elif distance >= 0.1-0.00001:
-	# 			return 0.1
-	# 		elif distance >= 0.05-0.00001:
-	# 			return 0.05
-	# 		elif distance >= 0.025-0.00001:
-	# 			return 0.025
-	# 		else:
-	# 			return 0.005
-	# 	x = np.array(p1)
-	# 	p2 = np.array(p2)
-
-	# 	dist = np.linalg.norm(p2-x)
-	# 	while dist > 0.05:
-	# 		step = compute_step(dist)
-	# 		vector = (p2 - x)/dist*step
-	# 		x_n = x + vector
-	# 		x, y = 0.5*(x[0] + x_n[0]), 0.5*(x[1] + x_n[1])
-	# 		print(vector)
-	# 		angle = atan2(vector[0], vector[1])
-	# 		self.create_wall_segment(x, y, angle, step)
-	# 		x = x_n
-	# 		dist = np.linalg.norm(p2-x)
-
-	# def create_wall_segment(self, x, y, angle, length):
-	# 	if length >= 0.2-0.00001:
-	# 		model = 'models/infrastructure/walls/80cm high walls/wall section 200cm.ttm'
-	# 	elif length >= 0.1-0.00001:
-	# 		model = 'models/infrastructure/walls/80cm high walls/wall section 100cm.ttm'
-	# 	elif length >= 0.05-0.00001:
-	# 		model = 'models/infrastructure/walls/80cm high walls/wall section 50cm.ttm'
-	# 	elif length >= 0.025-0.00001:
-	# 		model = 'models/infrastructure/walls/80cm high walls/wall section 25cm.ttm'
-	# 	else:
-	# 		model = 'models/infrastructure/walls/80cm high walls/wall section 5cm.ttm'
-	# 	print(model)
-	# 	wall_handle = self.create_model(model, 0, 0, 0, 0, 0, 0)
-	# 	print('Got wall handle {}.'.format(wall_handle))
-	# 	M = get_transform_matrix(x, y, 0.4, angle, 1., 1., 1.)
-	# 	print('M', M)
-	# 	ret = self.client.simxSetObjectMatrix(wall_handle, -1, M, self.client.simxServiceCall())
-	# 	print('SET MATRIX {}'.format(ret))
-	# 	# child = self.get_objects_children(wall_handle, 'sim.object_shape_type')[0]
-	# 	# print('Got child wall handle {}.'.format(child))
-	# 	# M = get_transform_matrix(0., 0., 0., 0., 1000., 1., 1.)
-	# 	# print('M', M)
-	# 	# ret = self.client.simxSetObjectMatrix(child, wall_handle, M, self.client.simxServiceCall())
-	# 	# print('SET MATRIX {}'.format(ret))
-	# 	# print(ret)
-	# 	return Wall(self, wall_handle)
 
 
 	def create_wall(self, p1, p2):
@@ -204,6 +147,7 @@ if __name__ == '__main__':
 	constructor.create_wall([-5., -5.], [-5.,5.])
 	constructor.create_wall([-5., 5.], [5.,5.])
 
+	constructor.client.simxStartSimulation(constructor.client.simxServiceCall())
 
 	while not exit_flag:
 		a.move(15.*(random.random()-0.5), 15.*(random.random()-0.5), None)
