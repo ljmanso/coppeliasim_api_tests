@@ -19,21 +19,17 @@ def please_exit(sig, frame):
 signal.signal(signal.SIGINT, please_exit)
 
 
-def get_transform_matrix(x, y, z, angle, scalex=1., scaley=1., scalez=1.):
-	scale_matrix = np.matrix([[1.*scalex,    0.,        0.,   0.],
-						      [0.,    1.*scaley,        0.,   0.],
-							  [0.,           0., 1.*scalez,   0.],
-							  [0.,           0.,        0.,   1.]])
+def get_transform_matrix(x, y, z, angle):
 	rotate_matrix = np.matrix([[cos(angle), -sin(angle), 0., 0.],
 							   [sin(angle),  cos(angle), 0., 0.],
 							   [        0.,          0., 1., 0.],
 							   [        0.,          0., 0., 1.]])
 	translate_matrix = np.matrix([[ 1., 0., 0., x ],
 			 				      [ 0., 1., 0., y ],
-			                      [ 0., 0., 1., z],
+			                      [ 0., 0., 1., z ],
 							      [ 0., 0., 0., 1.]])
-	matrix = translate_matrix * rotate_matrix * scale_matrix
-	return matrix.flatten().tolist()[0]
+	
+	return (translate_matrix * rotate_matrix).flatten().tolist()[0]
 
 #
 # Wall
@@ -61,9 +57,12 @@ class TheConstructor(object):
 	def __init__(self):
 		super(TheConstructor, self).__init__()
 		self.client = b0RemoteApi.RemoteApiClient('b0RemoteApi_pythonClient','b0RemoteApiAddOn')
-		print('-------------------------------')
-		print('Client', self.client)
-		print('-------------------------------')
+
+	def start(self):
+		self.client.simxStartSimulation(constructor.client.simxServiceCall())
+
+	def stop(self):
+		self.client.simxStopSimulation(constructor.client.simxServiceCall())
 
 	def get_objects_children(self, parent, children_type):
 		ret = self.client.simxGetObjectsInTree(parent, children_type, 1+2, self.client.simxServiceCall())
@@ -75,7 +74,7 @@ class TheConstructor(object):
 
 	def create_human(self, x, y, angle):
 		model = 'models/people/path planning Bill.ttm'
-		human_handle = self.create_model(model, x, y, 0, 0, 0, angle)
+		human_handle = self.create_model(model, x, y, 0, angle)
 		print('Got human handle {}.'.format(human_handle))
 		dummy_handle = self.get_objects_children(human_handle, 'sim.object_dummy_type')[0]
 		return Human(self, human_handle, dummy_handle)
@@ -86,30 +85,20 @@ class TheConstructor(object):
 		x, y = 0.5*(p1[0] + p2[0]), 0.5*(p1[1] + p2[1])
 		angle = atan2(p2[1]-p1[1], p2[0]-p1[0])
 		length = np.linalg.norm(np.array(p2)-np.array(p1))
-		wall_handle = self.create_model(model, 0, 0, 0, 0, 0, 0)
+		wall_handle = self.create_model(model, 0, 0, 0, 0)
 		print('Got wall handle {}.'.format(wall_handle))
-		M = get_transform_matrix(x, y, 0.4, angle, 1., 1., 1.)
+		M = get_transform_matrix(x, y, 0.4, angle)
 		print('M', M)
 		ret = self.client.simxSetObjectMatrix(wall_handle, -1, M, self.client.simxServiceCall())
 		print('SET MATRIX {}'.format(ret))
 
-		# self.client.simxExecuteScriptString('sim.scaleObject({},{},{},{})'.format(wall_handle, 10.*length,0.1,1.),
-										# self.client.simxServiceCall())
-
 		child = self.get_objects_children(wall_handle, 'sim.object_shape_type')[0]
 		print('Got child wall handle {}.'.format(child))
-		ret = self.client.simxExecuteScriptString('sim.scaleObject({},{},{},{},0)'.format(child, 10.*length,0.1,1.),
-										self.client.simxServiceCall())
-		# M = get_transform_matrix(0., 0., 0., 0., 1000., 1., 1.)
-		# print('M', M)
-		# ret = self.client.simxSetObjectMatrix(child, wall_handle, M, self.client.simxServiceCall())
-		# print('SET MATRIX {}'.format(ret))
-		# print(ret)
+		self.scale_object(child, 6.75*length, 0.12, 1.0)
 		return Wall(self, wall_handle)
 
 
-
-	def create_model(self, model, x, y, z, rx, ry, rz):
+	def create_model(self, model, x, y, z, rz):
 		full_path = coppelia_path + '/' + model
 		model_exists = os.path.exists(full_path)
 		print ('File "{}" exists: {}'.format(full_path, model_exists))
@@ -121,10 +110,13 @@ class TheConstructor(object):
 			print('Error creating model {}.'.format(full_path))
 			sys.exit(-1)
 		print('Created model with handle {}.'.format(ret[1]))
+		self.set_object_position(model, [x, y, z])
 		return ret[1]
 
 
 	def set_object_position(self, obj, lst):
+		if type(obj) is str:
+			obj = self.client.simxGetObjectHandle(obj, self.client.simxServiceCall())[1]
 		self.client.simxSetObjectPosition(obj, -1, lst, self.client.simxServiceCall())
 
 
@@ -132,14 +124,30 @@ class TheConstructor(object):
 		self.client.simxSetObjectOrientation(obj, -1, lst, self.client.simxServiceCall())
 
 
+	def run_script(self, script):
+		return self.client.simxExecuteScriptString(script, self.client.simxServiceCall())
+
+	def scale_object(self, handle, sx, sy, sz):
+		return self.run_script('sim.scaleObject({},{},{},{},0)'.format(handle, sx, sy, sz))
+
+	def close(self):
+		return self.client.simxCloseScene(self.client.simxServiceCall())
 
 if __name__ == '__main__':
 	constructor = TheConstructor()
-	a = constructor.create_human(15.*(random.random()-0.5),
-	                         15.*(random.random()-0.5),
+	constructor.stop()
+	constructor.close()
+	constructor.stop()
+	constructor.close()
+
+	constructor.set_object_position('DefaultCamera', [5.0, -7.0, 4.0])
+	constructor.set_object_position('ResizableFloor_5_25', [0.0, 0.0, -1.0])
+
+	a = constructor.create_human(10.*(random.random()-0.5),
+	                         10.*(random.random()-0.5),
 						     2.*3.1415926535*random.random())
-	b = constructor.create_human(15.*(random.random()-0.5),
-	                         15.*(random.random()-0.5),
+	b = constructor.create_human(10.*(random.random()-0.5),
+	                         10.*(random.random()-0.5),
 							 2.*3.1415926535*random.random())
 
 	constructor.create_wall([5., 5.], [5.,-5.])
@@ -147,13 +155,28 @@ if __name__ == '__main__':
 	constructor.create_wall([-5., -5.], [-5.,5.])
 	constructor.create_wall([-5., 5.], [5.,5.])
 
-	constructor.client.simxStartSimulation(constructor.client.simxServiceCall())
+	# r = constructor.create_model('models/infrastructure/floors/5mX5m wooden floor.ttm', +2.5, -2.5, 0., 0.)
+	# constructor.set_object_position(r, [+2.5, -2.5, 0., 0.])
+	# r = constructor.create_model('models/infrastructure/floors/5mX5m wooden floor.ttm', +2.5, +2.5, 0., 0.)
+	# constructor.set_object_position(r, [+2.5, +2.5, 0., 0.])
+	# r = constructor.create_model('models/infrastructure/floors/5mX5m wooden floor.ttm', -2.5, -2.5, 0., 0.)
+	# constructor.set_object_position(r, [-2.5, -2.5, 0., 0.])
+	# r = constructor.create_model('models/infrastructure/floors/5mX5m wooden floor.ttm', -2.5, +2.5, 0., 0.)
+	# constructor.set_object_position(r, [-2.5, +2.5, 0., 0.])
+
+	r = constructor.create_model('models/infrastructure/floors/5mX5m wooden floor.ttm', 0, 0, 0., 0.)
+	constructor.scale_object(r, 2, 2, 1)
+	for handle in constructor.get_objects_children(r, -1):
+		constructor.scale_object(handle, 2, 2, 1)
+
+
+	constructor.start()
 
 	while not exit_flag:
-		a.move(15.*(random.random()-0.5), 15.*(random.random()-0.5), None)
-		b.move(15.*(random.random()-0.5), 15.*(random.random()-0.5), None)
+		a.move(10.*(random.random()-0.5), 10.*(random.random()-0.5), None)
+		b.move(10.*(random.random()-0.5), 10.*(random.random()-0.5), None)
 
-		for i in range(20):
+		for i in range(12):
 			time.sleep(0.5)
 			constructor.client.simxSpinOnce()
 			if exit_flag:
