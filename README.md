@@ -9,11 +9,11 @@ This repository provides a Pythonic API for the CoppeliaSim robotics simulator b
 2. Edit your `.bashrc` file and add the following lines (**make sure you adapt the path in the first of the five lines accordingly**).
 After editing the file, make sure that the changes are applied (if you are not sure about how to do that, just log off and log back in).
 ```
- export COPPELIASIM_ROOT=/home/ljmanso/software/coppeliasim
- export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$COPPELIASIM_ROOT
- export QT_QPA_PLATFORM_PLUGIN_PATH=$COPPELIASIM_ROOT
- alias coppeliasim=$COPPELIASIM_ROOT/coppeliaSim
- export B0_RESOLVER="tcp://127.0.0.1:22000"
+export COPPELIASIM_ROOT=/home/ljmanso/software/coppeliasim
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$COPPELIASIM_ROOT
+export QT_QPA_PLATFORM_PLUGIN_PATH=$COPPELIASIM_ROOT
+alias coppeliasim="cd $COPPELIASIM_ROOT; bash coppeliaSim.sh"
+export B0_RESOLVER="tcp://127.0.0.1:22000"
 ```
 
 3. The latest version of CoppeliaSim has a [minor bug](https://forum.coppeliarobotics.com/viewtopic.php?f=5&t=8387) that we have to fix.
