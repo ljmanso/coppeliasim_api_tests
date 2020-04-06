@@ -87,12 +87,12 @@ while True:
         a.move(10.*(random.random()-0.5), 10.*(random.random()-0.5), -1.)
         b.move(10.*(random.random()-0.5), 10.*(random.random()-0.5), -1.)
     # EVERY 0.1 seconds
-    if time.time() - last_point_one > 0.5:
+    if time.time() - last_point_one > 0.25:
         last_point_one = time.time()
         pygame.event.pump()
-        rot = -0.5.*pygame.joystick.Joystick(0).get_axis(0)
-        adv = +1.*pygame.joystick.Joystick(0).get_axis(1)
+        adv = +0.80*pygame.joystick.Joystick(0).get_axis(1)
+        rot = -0.30*pygame.joystick.Joystick(0).get_axis(0)
         pioneer.set_velocity(adv, rot)
-    time.sleep(0.033)
+    time.sleep(0.001)
 
 

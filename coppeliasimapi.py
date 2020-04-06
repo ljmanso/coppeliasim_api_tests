@@ -282,7 +282,7 @@ class CoppeliaSimAPI(object):
                 return YouBot(self, h)
 
 
-    def create_youbot(self) -> YouBot:
+    def create_youbot(self, x, y, z) -> YouBot:
         ix, iy, iz = YouBot.get_position_offsets()
         ret = self.create_model('models/robots/mobile/KUKA YouBot.ttm', x+ix, y+iy, z+iz, 0.)
         self.set_object_orientation(ret, *YouBot.get_orientation_offsets())
