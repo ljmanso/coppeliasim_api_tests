@@ -2,13 +2,15 @@
 
 import time
 import random
+import pygame
 from coppeliasimapi import CoppeliaSimAPI, YouBot
 
 import setproctitle
 setproctitle.setproctitle('coppeliaExample1')
 
-
-
+pygame.display.init()
+pygame.joystick.init()
+pygame.joystick.Joystick(0).init()
 
 
 # The CoppeliaSimAPI constructor receives a list of paths that the object will use to find models.
@@ -55,26 +57,50 @@ coppelia.create_wall([ 5., -5., 10.4], [-5., -5., 10.4])
 coppelia.create_wall([-5., -5., 10.4], [-5.,  5., 10.4])
 coppelia.create_wall([-5.,  5., 10.4], [ 5.,  5., 10.4])
 
-# Create and scale a floor
-youbot = coppelia.create_youbot(0, 0, 10.095)
+# Create a YouBot
+youbot = coppelia.create_youbot(2, 2, 10.095)
 print('YouBot\'s handle:', youbot)
+
+# Create a Pioneer_p3dx
+pioneer = coppelia.create_pioneer_p3dx(0, 0, 10.195)
+print('Pioneer p3dx\'s handle:', pioneer)
 
 # Start the simulation
 coppelia.run_script('sim.setBoolParameter(sim.boolparam_realtime_simulation,true)')
+
+time.sleep(10)
+
+
 coppelia.start()
 coppelia.run_script('sim.setBoolParameter(sim.boolparam_realtime_simulation,true)')
 
 
 # Loop
-last = time.time()-10
+adv = rot = 0.
+last_ten = time.time()-10
+last_point_one = time.time()-10
 while True:
-    # Please move
-    if time.time() - last > 10:
-        last = time.time()
-        youbot.set_velocity(1111000.1, 0.0, 110.0)
+    # pygame.event.pump()
+    # print('v', adv, rot)
+
+    # EVERY 10 seconds
+    if time.time() - last_ten > 10:
+        last_ten = time.time()
+        youbot.set_velocity(2, 2, 0)
         # Move the humans every 12.0 * 0.5 seconds
         a.move(10.*(random.random()-0.5), 10.*(random.random()-0.5), 1.)
         b.move(10.*(random.random()-0.5), 10.*(random.random()-0.5), 1.)
+    # EVERY 0.1 seconds
+    if time.time() - last_point_one > 0.5:
+        last_point_one = time.time()
+        pygame.event.pump()
+        rot = 3.*pygame.joystick.Joystick(0).get_axis(0)
+        adv = 2.*pygame.joystick.Joystick(0).get_axis(1)
+        print('send', adv, rot)
+        pioneer.set_velocity(adv, rot)
+    time.sleep(0.1)
+    # print('aaaaaaaaaaaaa')
+    # coppelia.client.simxSpinOnce()
+    # coppelia.client.simxSleep(50)
+ 
 
-    coppelia.client.simxSpinOnce()
-    coppelia.client.simxSleep(50)
