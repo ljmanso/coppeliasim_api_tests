@@ -9,18 +9,23 @@ This repository provides a Pythonic API for the CoppeliaSim robotics simulator b
 2. Edit your `.bashrc` file and add the following lines (**make sure you adapt the path in the first of the five lines accordingly**).
 After editing the file, make sure that the changes are applied (if you are not sure about how to do that, just log off and log back in).
 ```
-export COPPELIASIM_ROOT=/home/ljmanso/software/coppeliasim
+export COPPELIASIM_ROOT=/home/USER/software/coppeliasim
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$COPPELIASIM_ROOT
 export QT_QPA_PLATFORM_PLUGIN_PATH=$COPPELIASIM_ROOT
 alias coppeliasim="cd $COPPELIASIM_ROOT; bash coppeliaSim.sh"
 export B0_RESOLVER="tcp://127.0.0.1:22000"
 ```
-
 3. The latest version of CoppeliaSim has a [minor bug](https://forum.coppeliarobotics.com/viewtopic.php?f=5&t=8387) that we have to fix.
 Type the following two commands in the command line:
 ```
 cd $COPPELIASIM_ROOT
 sed -i 's/function LoadModel(/function LoadModelFromFile(/g' lua/b0RemoteApiServer.lua
+```
+3.1 The latest version of CoppeliaSim has has another, less frequent [minor bug](https://forum.coppeliarobotics.com/viewtopic.php?t=8378)
+It is fixed by removing the Vortex plugin from the CoppeliaSim folder:
+```
+cd $COPPELIASIM_ROOT
+rm libsimExtDynamicsVortex.so
 ```
 
 4. We want to automatically start Coppelia's b0 interface automatically with the simulator.
