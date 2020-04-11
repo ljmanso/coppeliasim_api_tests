@@ -249,11 +249,27 @@ class CoppeliaSimAPI(object):
         ret = self.client.simxSetObjectPosition(obj, reference, [x, y, z], self.client.simxServiceCall())
         return ret
 
+    def get_object_position(self, obj, reference=-1):
+        obj = self.convert_to_valid_handle(obj)
+        reference = self.convert_to_valid_handle(reference)
+        ret = self.client.simxGetObjectPosition(obj, reference, self.client.simxServiceCall())
+        if ret[0] is not True:
+            raise Exception('CoppeliaSimAPI: get_object_position: Can\'t find object {}.'.format(obj))
+        return ret[1]
+
 
     def set_object_orientation(self, obj, x, y, z, reference='sim.handle_parent'):
         obj = self.convert_to_valid_handle(obj)
         reference = self.convert_to_valid_handle(reference)
         return self.client.simxSetObjectOrientation(obj, reference, [x, y, z], self.client.simxServiceCall())
+
+    def get_object_orientation(self, obj, reference=-1):
+        obj = self.convert_to_valid_handle(obj)
+        reference = self.convert_to_valid_handle(reference)
+        ret = self.client.simxGetObjectOrientation(obj, reference, self.client.simxServiceCall())
+        if ret[0] is not True:
+            raise Exception('CoppeliaSimAPI: get_object_orientation: Can\'t find object {}.'.format(obj))
+        return ret[1]
 
     def remove_object(self, obj):
         if type(obj) is str:
