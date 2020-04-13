@@ -11,16 +11,6 @@ import time
 def please_exit(sig, frame):
     sys.exit(0)
 
-def get_transform_matrix(x, y, z, angle):
-    rotate_matrix = np.matrix([[cos(angle), -sin(angle), 0., 0.],
-                              [sin(angle),  cos(angle), 0., 0.],
-                              [        0.,          0., 1., 0.],
-                              [        0.,          0., 0., 1.]])
-    translate_matrix = np.matrix([[ 1., 0., 0., x ],
-                                  [ 0., 1., 0., y ],
-                                  [ 0., 0., 1., z ],
-                                  [ 0., 0., 0., 1.]])
-    return (translate_matrix * rotate_matrix).flatten().tolist()[0]
 
 
 
@@ -37,16 +27,36 @@ class CoppeliaHandle(object):
 # Wall
 #  
 class Wall(CoppeliaHandle):
-    def __init__(self, coppelia, handle):
-        super(Wall, self).__init__(coppelia, handle)
+    def __init__(self, coppelia, p1, p2):
+        super(Wall, self).__init__(coppelia, -1)
+        self.p1, self.p2 = p1, p2
+        # pre
+        model = 'models/infrastructure/walls/80cm high walls/wall section 100cm.ttm'
+        x, y = 0.5*(p1[0] + p2[0]), 0.5*(p1[1] + p2[1])
+        angle = atan2(p2[1]-p1[1], p2[0]-p1[0])
+        # print(angle)
+        length = np.linalg.norm(np.array(p2)-np.array(p1))
+        # create
+        wall_handle = coppelia.create_model(model, x, y, p1[2], angle)
+        # resize
+        child = coppelia.get_objects_children(wall_handle, 'sim.object_shape_type')[0]
+        # print('Got child wall handle {}.'.format(child))
+        coppelia.scale_object(child, 6.749*length, 0.12, 1.5)
+
+        self.handle = wall_handle
 
 #
 # Human
 #  
-class Human(CoppeliaHandle):
+class StandingHuman(CoppeliaHandle):
+    def __init__(self, coppelia: 'CoppeliaSimAPI', handle : int):
+        super(StandingHuman, self).__init__(coppelia, handle)
+
+class Human(StandingHuman):
     def __init__(self, coppelia: 'CoppeliaSimAPI', handle : int):
         super(Human, self).__init__(coppelia, handle)
         self.dummy_handle = coppelia.get_objects_children(handle, 'sim.object_dummy_type')[0]
+        # self.move(*coppelia.get_object_position(handle))
 
     def move(self, x, y, z):
         self.c.set_object_position(self.dummy_handle, x, y, z)
@@ -99,6 +109,19 @@ class YouBot(CoppeliaHandle):
         #     self.wheel4, -forwBackVel+leftRightVel+rotVel)
         # print('CODE:', code)
         # print(self.c.run_script(code))
+
+
+class OmniPlatform(CoppeliaHandle):
+    def __init__(self, coppelia: 'CoppeliaSimAPI', handle: int):
+        super(OmniPlatform, self).__init__(coppelia, handle)
+    @staticmethod
+    def get_position_offsets():
+        return 0., 0., 0.095
+
+    @staticmethod
+    def get_orientation_offsets():
+        return 0., -1.57, 0.
+
 
 
 #
@@ -190,21 +213,14 @@ class CoppeliaSimAPI(object):
         # print('Got human handle {}.'.format(human_handle))
         return Human(self, human_handle)
 
+    def create_standing_human(self, x, y, z, angle):
+        model = 'models/people/Standing Bill.ttm'
+        human_handle = self.create_model(model, x, y, z, angle)
+        return StandingHuman(self, human_handle)
+
 
     def create_wall(self, p1, p2):
-        # pre
-        model = 'models/infrastructure/walls/80cm high walls/wall section 100cm.ttm'
-        x, y = 0.5*(p1[0] + p2[0]), 0.5*(p1[1] + p2[1])
-        angle = atan2(p2[1]-p1[1], p2[0]-p1[0])
-        # print(angle)
-        length = np.linalg.norm(np.array(p2)-np.array(p1))
-        # create
-        wall_handle = self.create_model(model, x, y, p1[2], angle)
-        # resize
-        child = self.get_objects_children(wall_handle, 'sim.object_shape_type')[0]
-        # print('Got child wall handle {}.'.format(child))
-        self.scale_object(child, 6.749*length, 0.12, 1.5)
-        return Wall(self, wall_handle)
+        return Wall(self, p1, p2)
 
 
     def create_model(self, model, x=None, y=None, z=None, rz=None):
@@ -231,7 +247,7 @@ class CoppeliaSimAPI(object):
 
     def set_object_transform(self, obj, x, y, z, angle):
         obj = self.convert_to_valid_handle(obj)
-        M = get_transform_matrix(x, y, z, angle)
+        M = CoppeliaSimAPI.get_transform_matrix(x, y, z, angle)
         ret = self.client.simxSetObjectMatrix(obj, -1, M, self.client.simxServiceCall())
         return ret
 
@@ -297,6 +313,13 @@ class CoppeliaSimAPI(object):
             if name == 'youBot':
                 return YouBot(self, h)
 
+    def get_omniplatform(self) -> OmniPlatform:
+        children = self.get_objects_children('sim.handle_scene', children_type='sim.object_shape_type', filter_children=1+2)
+        for h in children:
+            name = self.get_object_name(h)
+            if name == 'OmniPlatform':
+                return OmniPlatform(self, h)
+
 
     def create_youbot(self, x, y, z) -> YouBot:
         ix, iy, iz = YouBot.get_position_offsets()
@@ -324,10 +347,25 @@ class CoppeliaSimAPI(object):
         self.client.simxPauseSimulation(self.client.simxServiceCall())
     
 
+    @staticmethod
+    def get_transform_matrix(x, y, z, angle):
+        rotate_matrix = np.matrix([[cos(angle), -sin(angle), 0., 0.],
+                                [sin(angle),  cos(angle), 0., 0.],
+                                [        0.,          0., 1., 0.],
+                                [        0.,          0., 0., 1.]])
+        translate_matrix = np.matrix([[ 1., 0., 0., x ],
+                                    [ 0., 1., 0., y ],
+                                    [ 0., 0., 1., z ],
+                                    [ 0., 0., 0., 1.]])
+        return (translate_matrix @ rotate_matrix).flatten().tolist()[0]
 
-# r2d2
-# BallRobot
-# OmniPlatform
+    @staticmethod
+    def get_transformation_matrix(x, z, angle):
+        M = np.zeros( (3,3) )
+        M[0][0], M[0][1], M[0][2] = +cos(-angle), -sin(-angle), x
+        M[1][0], M[1][1], M[1][2] = +sin(-angle), +cos(-angle), z
+        M[2][0], M[2][1], M[2][2] =           0.,           0., 1.
+        return M
 
 
 
