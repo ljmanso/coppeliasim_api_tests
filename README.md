@@ -2,6 +2,10 @@
 
 This repository provides a Pythonic API for the CoppeliaSim robotics simulator based on their b0 interface.
 
+## Dependencies
+
+```sudo python3 -m pip install msgpack```
+
 ## Installation
 
 1. Download CoppeliaSim from [their website](https://www.coppeliarobotics.com/ubuntuVersions) and uncompress the compressed tarball in an appropriate directory.
