@@ -19,16 +19,11 @@ export QT_QPA_PLATFORM_PLUGIN_PATH=$COPPELIASIM_ROOT
 alias coppeliasim="cd $COPPELIASIM_ROOT; bash coppeliaSim.sh"
 export B0_RESOLVER="tcp://127.0.0.1:22000"
 ```
-3. The latest version of CoppeliaSim has a [minor bug](https://forum.coppeliarobotics.com/viewtopic.php?f=5&t=8387) that we have to fix.
-Type the following two commands in the command line:
+3. The latest version of CoppeliaSim has a couple of minor bugs that we have to fix ([a](https://forum.coppeliarobotics.com/viewtopic.php?f=5&t=8387),[b](https://forum.coppeliarobotics.com/viewtopic.php?t=8378)).
+Run the following commands in the command line:
 ```
 cd $COPPELIASIM_ROOT
 sed -i 's/function LoadModel(/function LoadModelFromFile(/g' lua/b0RemoteApiServer.lua
-```
-3.1 The latest version of CoppeliaSim has has another, less frequent [minor bug](https://forum.coppeliarobotics.com/viewtopic.php?t=8378)
-It is fixed by removing the Vortex plugin from the CoppeliaSim folder:
-```
-cd $COPPELIASIM_ROOT
 rm libsimExtDynamicsVortex.so
 ```
 
