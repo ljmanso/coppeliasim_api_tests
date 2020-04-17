@@ -11,7 +11,7 @@ verbose = bool(os.environ.get('VERBOSE', False))
 coppeliasim_dir = None
 for maybe in (
     os.environ.get('COPPELIASIM_ROOT_DIR'),
-    s.environ.get('COPPELIASIM_ROOT'),
+    os.environ.get('COPPELIASIM_ROOT'),
     os.environ.get('VREP_ROOT'),
     os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..')
 ):

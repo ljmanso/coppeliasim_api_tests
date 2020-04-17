@@ -274,10 +274,10 @@ class CoppeliaSimAPI(object):
         return ret[1]
 
 
-    def set_object_orientation(self, obj, x, y, z, reference='sim.handle_parent'):
+    def set_object_orientation(self, obj, alpha, betta, gamma, reference='sim.handle_parent'):
         obj = self.convert_to_valid_handle(obj)
         reference = self.convert_to_valid_handle(reference)
-        return self.client.simxSetObjectOrientation(obj, reference, [x, y, z], self.client.simxServiceCall())
+        return self.client.simxSetObjectOrientation(obj, reference, [alpha, betta, gamma], self.client.simxServiceCall())
 
     def get_object_orientation(self, obj, reference=-1):
         obj = self.convert_to_valid_handle(obj)
