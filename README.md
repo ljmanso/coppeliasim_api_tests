@@ -33,7 +33,25 @@ To do that, use the following commands:
 cd $COPPELIASIM_ROOT
 mv lua/b0RemoteApiServer.lua simAddOnScript_b0RemoteApiServer.lua
 ```
+### Instalation on mac OS
 
+The process is similar to the steps stated previously with the following modifications:
+
+* On latest versions of mac OS the default shell is zsh so you may have to edit `.zshrc` instead of `.bashrc`.
+
+* The setting of environment variables differs a bit from the previous. It has to be at follows:
+
+```
+export COPPELIASIM_ROOT=/Users/USER/software/CoppeliaSim
+export COPPELIASIM_ROOT_DIR=/Users/USER/software/CoppeliaSim
+export DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:$COPPELIASIM_ROOT_DIR
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$COPPELIASIM_ROOT_DIR
+export QT_QPA_PLATFORM_PLUGIN_PATH=$COPPELIASIM_ROOT_DIR
+export B0_RESOLVER="tcp://127.0.0.1:22000"
+alias coppeliasim="open ${COPPELIASIM_ROOT_DIR}/coppeliaSim.app"
+```
+
+* Finally, in macOS Catalina you will have to disable the System Integrity Protection or it won't let you set the global variables DYLD_LIBRARY_PATH and LD_LIBRARY_PATH. [Here](https://developer.apple.com/library/archive/documentation/Security/Conceptual/System_Integrity_Protection_Guide/ConfiguringSystemIntegrityProtection/ConfiguringSystemIntegrityProtection.html) you have a link that explain the process for enable or disable it.
 
 ## Description of the API provided
 

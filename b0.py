@@ -4,21 +4,58 @@ import sys
 import os
 import ctypes as ct
 
-libb0 = None
-prefix, suffix = 'lib', '.so'
+verbose = bool(os.environ.get('VERBOSE', False))
+
+# determine coppeliaSim root directory from env var or relative to the standard
+# location of this script:
+coppeliasim_dir = None
+for maybe in (
+    os.environ.get('COPPELIASIM_ROOT_DIR'),
+    s.environ.get('COPPELIASIM_ROOT'),
+    os.environ.get('VREP_ROOT'),
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..')
+):
+    if maybe and os.path.isdir(maybe) and os.path.isdir(os.path.join(maybe, 'helpFiles')):
+        coppeliasim_dir = os.path.normpath(maybe)
+        break
+if coppeliasim_dir is None:
+    print('CoppeliaSim directory not found')
+    sys.exit(1)
+else:
+    if verbose:
+        print('Found CoppeliaSim directory at %s' % coppeliasim_dir)
+
+# platform specific details for finding b0 library:
 if platform.system() in ('cli', 'Windows'):
     prefix, suffix = '', '.dll'
-if platform.system() in ('Darwin', ):
-    suffix = '.dylib'
-for path in ('.', 'build', '../../build'):
-    fullpath = os.path.join(os.path.dirname(__file__), path)
-    if not os.path.isdir(fullpath): continue
-    libb0_fullpath = os.path.join(fullpath, '%sb0%s' % (prefix, suffix))
-    if os.path.exists(libb0_fullpath):
-        libb0 = ct.CDLL(libb0_fullpath)
-        break
-if libb0 is None:
-    raise RuntimeError('%sb0%s not found' % (prefix, suffix))
+    libpath_var, libpath = 'PATH', coppeliasim_dir
+elif platform.system() in ('Darwin', ):
+    prefix, suffix = 'lib', '.dylib'
+    libpath_var, libpath = 'DYLD_LIBRARY_PATH', os.path.join(coppeliasim_dir, 'coppeliaSim.app/Contents/Frameworks')
+else: # Linux
+    prefix, suffix = 'lib', '.so'
+    libpath_var, libpath = 'LD_LIBRARY_PATH', coppeliasim_dir
+
+libb0_name = prefix + 'b0' + suffix
+try:
+    lp = os.environ.get(libpath_var)
+    if verbose:
+        print('Trying to load {libb0_name}... ({libpath_var} is {lp})'.format(**locals()))
+    libb0 = ct.CDLL(libb0_name)
+except OSError:
+    # if libb0 fails to load, try to relaunch python specifying the environment variable
+    # that will (hopefully) make possible to load it (if not already done):
+    if os.pathsep + libpath_var + os.pathsep in os.pathsep + os.environ.get(libpath_var, '') + os.pathsep:
+        raise RuntimeError('%s not found' % libb0_name)
+    os.environ[libpath_var] = libpath + os.pathsep + os.environ.get(libpath_var, '')
+    import subprocess
+    if verbose:
+        print('Relaunching {sys.executable} with args {sys.argv} and {libpath_var}={libpath}...'.format(**locals()))
+    subprocess.call([sys.executable] + sys.argv, env=os.environ)
+    exit(0)
+
+if verbose:
+    print('libb0:', libb0)
 
 def _(n, ret, *args):
     # perform encoding/decoding for char* argument (use str to enable conversion)
