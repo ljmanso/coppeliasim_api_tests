@@ -50,6 +50,7 @@ export QT_QPA_PLATFORM_PLUGIN_PATH=$COPPELIASIM_ROOT_DIR
 export B0_RESOLVER="tcp://127.0.0.1:22000"
 alias coppeliasim="open ${COPPELIASIM_ROOT_DIR}/coppeliaSim.app"
 ```
+* Make sure that you have installed `opencv-python-headless` instead of `opencv-python` and never both at the same time.
 
 * Finally, in macOS Catalina you will have to disable the System Integrity Protection or it won't let you set the global variables DYLD_LIBRARY_PATH and LD_LIBRARY_PATH. [Here](https://developer.apple.com/library/archive/documentation/Security/Conceptual/System_Integrity_Protection_Guide/ConfiguringSystemIntegrityProtection/ConfiguringSystemIntegrityProtection.html) you have a link that explain the process for enable or disable it.
 
