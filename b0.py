@@ -123,12 +123,18 @@ _("b0_service_server_spin_once", None, ct.c_void_p)
 _("b0_service_server_get_service_name", str, ct.c_void_p)
 _("b0_service_server_log", None, ct.c_void_p, ct.c_int, str)
 
+initialised = False
 def init():
+    global initialised
+    if initialised:
+        return
     argc = ct.c_int(1)
     argc_p = ct.byref(argc)
     argv = ct.c_char_p(b'b0python')
     argv_p =ct.byref(argv)
+    initialised = True
     b0_init(argc_p, argv_p)
+
     
 class Node:
     def __init__(self, name='node'):

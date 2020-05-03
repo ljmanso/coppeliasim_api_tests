@@ -4,7 +4,7 @@ import time
 import random
 import pygame
 from coppeliasimapi import CoppeliaSimAPI, YouBot, Pioneer_p3dx
-
+import threading
 import setproctitle
 setproctitle.setproctitle('coppeliaExample1')
 
@@ -42,7 +42,7 @@ for child in children:
     elif name == 'Pioneer_p3dx':
         pioneer = Pioneer_p3dx(coppelia, child)
         print('Pioneer p3dx\'s handle:', pioneer)
-    elif name == 'Camera':
+    elif name.lower() == 'Camera'.lower():
         perspective = child
         print('Perspective camera has handle:', perspective)
 
@@ -54,18 +54,19 @@ coppelia.set_object_orientation(perspective, 0, -pi/2., 0, perspective)
 coppelia.set_object_orientation(perspective, 0.4, 0, 0, perspective)
 
 # Add two humans
-a = coppelia.create_human(10.*(random.random()-0.5),               # x
-                            10.*(random.random()-0.5),             # y
-                            0., 2.*3.1415926535*random.random())  # z, angle
-b = coppelia.create_human(10.*(random.random()-0.5),               # x
-                            10.*(random.random()-0.5),             # y
-                            0., 2.*3.1415926535*random.random())  # z, angle
+# a = coppelia.create_human(10.*(random.random()-0.5),               # x
+#                             10.*(random.random()-0.5),             # y
+#                             0., 2.*3.1415926535*random.random())  # z, angle
+# b = coppelia.create_human(10.*(random.random()-0.5),               # x
+#                             10.*(random.random()-0.5),             # y
+#                             0., 2.*3.1415926535*random.random())  # z, angle
 
 # Add four walls
-coppelia.create_wall([ 5.,  5., 0.4], [ 5., -5., 0.4])
-coppelia.create_wall([ 5., -5., 0.4], [-5., -5., 0.4])
-coppelia.create_wall([-5., -5., 0.4], [-5.,  5., 0.4])
-coppelia.create_wall([-5.,  5., 0.4], [ 5.,  5., 0.4])
+# coppelia.create_wall([ 5.,  5., 0.4], [ 5., -5., 0.4])
+# coppelia.create_wall([ 5., -5., 0.4], [-5., -5., 0.4])
+# coppelia.create_wall([-5., -5., 0.4], [-5.,  5., 0.4])
+# coppelia.create_wall([-5.,  5., 0.4], [ 5.,  5., 0.4])
+# coppelia.create_wall([-1., -3., 0.4], [-1.,  2., 0.4])
 
 
 # Start the simulation
@@ -82,17 +83,28 @@ while True:
     # EVERY 10 seconds
     if time.time() - last_ten > 10:
         last_ten = time.time()
-        youbot.set_velocity(0.12, -0.12, 0)
         # Move the humans every 12.0 * 0.5 seconds
-        a.move(10.*(random.random()-0.5), 10.*(random.random()-0.5), -1.)
-        b.move(10.*(random.random()-0.5), 10.*(random.random()-0.5), -1.)
+        # a.move(10.*(random.random()-0.5), 10.*(random.random()-0.5), -1.)
+        # b.move(10.*(random.random()-0.5), 10.*(random.random()-0.5), -1.)
     # EVERY 0.1 seconds
     if time.time() - last_point_one > 0.25:
         last_point_one = time.time()
         pygame.event.pump()
         adv = +0.80*pygame.joystick.Joystick(0).get_axis(1)
         rot = -0.30*pygame.joystick.Joystick(0).get_axis(0)
-        pioneer.set_velocity(adv, rot)
+        # 
+        # youbot.set_velocity(0.12, -0.12, 0)
+        # pioneer.set_velocity(adv, rot)
+        # 
+        time_a = time.time()
+        thread_a = threading.Thread(target=youbot.set_velocity, args=(0.12, -0.12, 0.,))
+        thread_a.start()
+        thread_b = threading.Thread(target=pioneer.set_velocity, args=(adv, rot,))
+        thread_b.start()
+        thread_a.join()
+        thread_b.join()
+        time_b = time.time()
+        print(time_b-time_a)
     time.sleep(0.001)
 
 
