@@ -273,7 +273,7 @@ class CoppeliaSimAPI(object):
             obj = obj.handle
         elif type(obj) is str:
             if obj not in ['sim.handle_parent']:
-               obj = self.client.simxGetObjectHandle(obj, call.get)[1]
+               obj = self.client.simxGetObjectHandle(obj, call.get())[1]
         return obj
 
     def set_object_position(self, obj, x, y, z, reference='sim.handle_parent', asynch=False):
