@@ -1,6 +1,7 @@
 # coppeliasim_pythonic_api
 
 This repository provides a Pythonic API for the CoppeliaSim robotics simulator based on their b0 interface.
+If you are a student or work for an academic institution you will probably need to download the "Edu" (educational) version.
 
 ## Dependencies
 
