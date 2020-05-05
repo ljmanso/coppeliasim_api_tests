@@ -10,13 +10,16 @@ This repository provides a Pythonic API for the CoppeliaSim robotics simulator b
 
 1. Download CoppeliaSim from [their website](https://www.coppeliarobotics.com/ubuntuVersions) and uncompress the compressed tarball in an appropriate directory.
 
-2. Edit your `.bashrc` file and add the following lines (**make sure you adapt the path in the first of the five lines accordingly**).
+2. Edit your `.bashrc` file and add the following lines (**make sure you adapt the path in the first of the three lines accordingly**).
 After editing the file, make sure that the changes are applied (if you are not sure about how to do that, just log off and log back in).
 ```
 export COPPELIASIM_ROOT=/home/USER/software/coppeliasim
 alias coppeliasim="cd $COPPELIASIM_ROOT; bash coppeliaSim.sh"
 export B0_RESOLVER="tcp://127.0.0.1:22000"
 ```
+
+**make sure you adapt the path in the first of the five lines accordingly**
+
 3. The latest version of CoppeliaSim has a couple of minor bugs that we have to fix ([a](https://forum.coppeliarobotics.com/viewtopic.php?f=5&t=8387),[b](https://forum.coppeliarobotics.com/viewtopic.php?t=8378)).
 Run the following commands in the command line:
 ```
