@@ -315,7 +315,7 @@ class CoppeliaSimAPI(object):
         if type(obj) is str:
             sobj = self.client.simxGetObjectHandle(obj, call.get())[1]
             obj = sobj
-        return self.client.simxRemoveObjects([obj], 1+2, call.get())
+        return self.client.simxRemoveObjects([obj], 1, call.get())
 
 
     def run_script(self, script, asynch=False):
