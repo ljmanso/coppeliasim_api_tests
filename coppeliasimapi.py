@@ -9,12 +9,13 @@ from os import path
 import time
 
 
-
 class CallType(object):
     def __init__(self, call):
         self.call = call
+
     def get(self):
         return self.call
+
 
 #
 # Generic Handle
@@ -25,6 +26,7 @@ class CoppeliaHandle(object):
         self.c = coppelia
         self.handle = handle
 
+
 #
 # Wall
 #  
@@ -34,34 +36,37 @@ class Wall(CoppeliaHandle):
         self.p1, self.p2 = p1, p2
         # pre
         model = 'models/infrastructure/walls/80cm high walls/wall section 100cm.ttm'
-        x, y = 0.5*(p1[0] + p2[0]), 0.5*(p1[1] + p2[1])
-        angle = atan2(p2[1]-p1[1], p2[0]-p1[0])
-        length = np.linalg.norm(np.array(p2)-np.array(p1))
+        x, y = 0.5 * (p1[0] + p2[0]), 0.5 * (p1[1] + p2[1])
+        angle = atan2(p2[1] - p1[1], p2[0] - p1[0])
+        length = np.linalg.norm(np.array(p2) - np.array(p1))
         # create
         wall_handle = coppelia.create_model(model, x, y, p1[2], angle, asynch=False)
         # resize
         child = coppelia.get_objects_children(wall_handle, 'sim.object_shape_type', asynch=False)[0]
         # print (f'WALL child {child}')
-        coppelia.scale_object(child, 6.749*length, 0.12, 1.5, asynch=False)
-        coppelia.scale_object(wall_handle, 6.749*length, 0.12, 1.5, asynch=False)
+        coppelia.scale_object(child, 6.749 * length, 0.12, 1.5, asynch=False)
+        coppelia.scale_object(wall_handle, 6.749 * length, 0.12, 1.5, asynch=False)
 
         self.handle = wall_handle
+
 
 #
 # Human
 #  
 class StandingHuman(CoppeliaHandle):
-    def __init__(self, coppelia: 'CoppeliaSimAPI', handle : int):
+    def __init__(self, coppelia: 'CoppeliaSimAPI', handle: int):
         super(StandingHuman, self).__init__(coppelia, handle)
 
+
 class Human(StandingHuman):
-    def __init__(self, coppelia: 'CoppeliaSimAPI', handle : int):
+    def __init__(self, coppelia: 'CoppeliaSimAPI', handle: int):
         super(Human, self).__init__(coppelia, handle)
         self.dummy_handle = coppelia.get_objects_children(handle, 'sim.object_dummy_type')[0]
         # self.move(*coppelia.get_object_position(handle))
 
     def move(self, x, y, z):
         self.c.set_object_position(self.dummy_handle, x, y, z)
+
 
 #
 # YouBot
@@ -95,10 +100,10 @@ class YouBot(CoppeliaHandle):
         # self.c.set_joint_target_velocity(self.wheel3, -forwBackVel-leftRightVel+rotVel, asynch=asynch)
         # self.c.set_joint_target_velocity(self.wheel4, -forwBackVel+leftRightVel+rotVel, asynch=asynch)
         # print('VELS:', forwBackVel, leftRightVel, rotVel)
-        code = f"""sim.setJointTargetVelocity({self.wheel1}, {-forwBackVel-leftRightVel-rotVel}) and
-                   sim.setJointTargetVelocity({self.wheel2}, {-forwBackVel+leftRightVel-rotVel}) and
-                   sim.setJointTargetVelocity({self.wheel3}, {-forwBackVel-leftRightVel+rotVel}) and
-                   sim.setJointTargetVelocity({self.wheel4}, {-forwBackVel+leftRightVel+rotVel})"""
+        code = f"""sim.setJointTargetVelocity({self.wheel1}, {-forwBackVel - leftRightVel - rotVel}) and
+                   sim.setJointTargetVelocity({self.wheel2}, {-forwBackVel + leftRightVel - rotVel}) and
+                   sim.setJointTargetVelocity({self.wheel3}, {-forwBackVel - leftRightVel + rotVel}) and
+                   sim.setJointTargetVelocity({self.wheel4}, {-forwBackVel + leftRightVel + rotVel})"""
         # print('CODE:', code)
         print(self.c.run_script(code))
 
@@ -106,6 +111,7 @@ class YouBot(CoppeliaHandle):
 class OmniPlatform(CoppeliaHandle):
     def __init__(self, coppelia: 'CoppeliaSimAPI', handle: int):
         super(OmniPlatform, self).__init__(coppelia, handle)
+
     @staticmethod
     def get_position_offsets():
         return 0., 0., 0.095
@@ -113,7 +119,6 @@ class OmniPlatform(CoppeliaHandle):
     @staticmethod
     def get_orientation_offsets():
         return 0., -1.57, 0.
-
 
 
 #
@@ -141,9 +146,9 @@ class Pioneer_p3dx(CoppeliaHandle):
     def set_velocity(self, adv, rot, asynch=False):
         axisLength = 0.381
         wheelRadius = 0.0975
-        left  = ( adv- ( rot*axisLength ) /2. ) /wheelRadius
-        right = ( adv+ ( rot*axisLength ) /2. ) /wheelRadius
-        self.c.set_joint_target_velocity(self.left_motor,  left, asynch=asynch)
+        left = (adv - (rot * axisLength) / 2.) / wheelRadius
+        right = (adv + (rot * axisLength) / 2.) / wheelRadius
+        self.c.set_joint_target_velocity(self.left_motor, left, asynch=asynch)
         self.c.set_joint_target_velocity(self.right_motor, right, asynch=asynch)
         # self.c.set_joint_target_velocity(self.left_motor,  forw_back_vel)
         # self.c.set_joint_target_velocity(self.right_motor, forw_back_vel)
@@ -153,8 +158,8 @@ class Pioneer_p3dx(CoppeliaHandle):
 class CoppeliaSimAPI(object):
     def __init__(self, paths=[]):
         super(CoppeliaSimAPI, self).__init__()
-        self.coppelia_paths = paths + ['./', os.environ['COPPELIASIM_ROOT']+'/']
-        self.client = self.create_client()#'b0RemoteApi_pythonClient', 'b0RemoteApiAddOn')
+        self.coppelia_paths = paths + ['./', os.environ['COPPELIASIM_ROOT'] + '/']
+        self.client = self.create_client()  # 'b0RemoteApi_pythonClient', 'b0RemoteApiAddOn')
 
     @staticmethod
     def create_client(a=None, b=None):
@@ -172,7 +177,6 @@ class CoppeliaSimAPI(object):
 
     def spinOnce(self):
         self.client.simxSpinOnce()
-
 
     def get_call_object(self, asynch):
         if type(asynch) is CallType:
@@ -195,7 +199,7 @@ class CoppeliaSimAPI(object):
         call = self.get_call_object(asynch)
         self.client.simxStopSimulation(call.get())
 
-    def get_objects_children(self, parent='sim.handle_scene', children_type=None, filter_children=1+2, asynch=False):
+    def get_objects_children(self, parent='sim.handle_scene', children_type=None, filter_children=1 + 2, asynch=False):
         call = self.get_call_object(asynch)
         if children_type is None:
             children_type = 'sim.handle_all'
@@ -230,10 +234,8 @@ class CoppeliaSimAPI(object):
         human_handle = self.create_model(model, x, y, z, angle)
         return StandingHuman(self, human_handle)
 
-
     def create_wall(self, p1, p2):
         return Wall(self, p1, p2)
-
 
     def create_model(self, model, x=None, y=None, z=None, rz=None, asynch=False):
         do_transform = False
@@ -251,7 +253,6 @@ class CoppeliaSimAPI(object):
                     self.set_object_transform(ret[1], x, y, z, rz, asynch=asynch)
                 return ret[1]
         raise Exception(f'Couldn\'t find model {model} in any of the paths {self.coppelia_paths}')
-
 
     def get_object_handle(self, object_name, asynch=False):
         call = self.get_call_object(asynch)
@@ -273,7 +274,7 @@ class CoppeliaSimAPI(object):
             obj = obj.handle
         elif type(obj) is str:
             if obj not in ['sim.handle_parent']:
-               obj = self.client.simxGetObjectHandle(obj, call.get())[1]
+                obj = self.client.simxGetObjectHandle(obj, call.get())[1]
         return obj
 
     def set_object_position(self, obj, x, y, z, reference='sim.handle_parent', asynch=False):
@@ -292,7 +293,6 @@ class CoppeliaSimAPI(object):
             if ret[0] is not True:
                 raise Exception(f'CoppeliaSimAPI: get_object_position: Can\'t find object {obj}.')
             return ret[1]
-
 
     def set_object_orientation(self, obj, alpha, betta, gamma, reference='sim.handle_parent', asynch=False):
         call = self.get_call_object(asynch)
@@ -317,7 +317,6 @@ class CoppeliaSimAPI(object):
             obj = sobj
         return self.client.simxRemoveObjects([obj], 1, call.get())
 
-
     def run_script(self, script, asynch=False):
         call = self.get_call_object(asynch)
         return self.client.simxExecuteScriptString(script, call.get())
@@ -329,37 +328,38 @@ class CoppeliaSimAPI(object):
         call = self.get_call_object(asynch)
         return self.client.simxCloseScene(call.get())
 
-
     # NOT INCLUDED IN THE DOCUMENTATION YET
     def get_youbot(self) -> YouBot:
-        children = self.get_objects_children('sim.handle_scene', children_type='sim.object_shape_type', filter_children=1+2)
+        children = self.get_objects_children('sim.handle_scene', children_type='sim.object_shape_type',
+                                             filter_children=1 + 2)
         for h in children:
             name = self.get_object_name(h)
             if name == 'youBot':
                 return YouBot(self, h)
 
     def get_omniplatform(self) -> OmniPlatform:
-        children = self.get_objects_children('sim.handle_scene', children_type='sim.object_shape_type', filter_children=1+2)
+        children = self.get_objects_children('sim.handle_scene', children_type='sim.object_shape_type',
+                                             filter_children=1 + 2)
         for h in children:
             name = self.get_object_name(h)
             if name == 'OmniPlatform':
                 return OmniPlatform(self, h)
 
-
     def create_youbot(self, x, y, z) -> YouBot:
         ix, iy, iz = YouBot.get_position_offsets()
-        ret = self.create_model('models/robots/mobile/KUKA YouBot.ttm', x+ix, y+iy, z+iz, 0.)
+        ret = self.create_model('models/robots/mobile/KUKA YouBot.ttm', x + ix, y + iy, z + iz, 0.)
         self.set_object_orientation(ret, *YouBot.get_orientation_offsets())
         return YouBot(self, ret)
 
     def create_pioneer_p3dx(self, x, y, z) -> Pioneer_p3dx:
         ix, iy, iz = Pioneer_p3dx.get_position_offsets()
-        ret = self.create_model('models/robots/mobile/pioneer p3dx.ttm', x+ix, y+iy, z+iz, 0.)
+        ret = self.create_model('models/robots/mobile/pioneer p3dx.ttm', x + ix, y + iy, z + iz, 0.)
         self.set_object_orientation(ret, *Pioneer_p3dx.get_orientation_offsets())
         return Pioneer_p3dx(self, ret)
 
     def get_pioneer_p3dx(self) -> Pioneer_p3dx:
-        children = self.get_objects_children('sim.handle_scene', children_type='sim.object_shape_type', filter_children=1+2)
+        children = self.get_objects_children('sim.handle_scene', children_type='sim.object_shape_type',
+                                             filter_children=1 + 2)
         for h in children:
             name = self.get_object_name(h)
             if name == 'Pioneer_p3dx':
@@ -372,28 +372,38 @@ class CoppeliaSimAPI(object):
     def pause(self):
         call = self.get_call_object(asynch)
         self.client.simxPauseSimulation(call.get())
-    
+
+    def check_collision(self, obj1, obj2, asynch=False):
+        call = self.get_call_object(asynch)
+        obj1 = self.convert_to_valid_handle(obj1)
+        obj2 = self.convert_to_valid_handle(obj2)
+
+        print(obj1, obj2)
+
+        return self.client.simxCheckCollision(obj1, obj2, call.get())
+
+    def set_collidable(self, obj, asynch=False):
+        handle = self.convert_to_valid_handle(obj)
+        return self.run_script(f'sim.setObjectSpecialProperty({handle},sim.objectspecialproperty_collidable+'
+                               f'sim.objectspecialproperty_measurable+sim.objectspecialproperty_detectable_all'
+                               f'+sim.objectspecialproperty_renderable)', asynch)
 
     @staticmethod
     def get_transform_matrix(x, y, z, angle):
         rotate_matrix = np.matrix([[cos(angle), -sin(angle), 0., 0.],
-                                [sin(angle),  cos(angle), 0., 0.],
-                                [        0.,          0., 1., 0.],
-                                [        0.,          0., 0., 1.]])
-        translate_matrix = np.matrix([[ 1., 0., 0., x ],
-                                    [ 0., 1., 0., y ],
-                                    [ 0., 0., 1., z ],
-                                    [ 0., 0., 0., 1.]])
+                                   [sin(angle), cos(angle), 0., 0.],
+                                   [0., 0., 1., 0.],
+                                   [0., 0., 0., 1.]])
+        translate_matrix = np.matrix([[1., 0., 0., x],
+                                      [0., 1., 0., y],
+                                      [0., 0., 1., z],
+                                      [0., 0., 0., 1.]])
         return (translate_matrix @ rotate_matrix).flatten().tolist()[0]
 
     @staticmethod
     def get_transformation_matrix(x, z, angle):
-        M = np.zeros( (3,3) )
+        M = np.zeros((3, 3))
         M[0][0], M[0][1], M[0][2] = +cos(-angle), -sin(-angle), x
         M[1][0], M[1][1], M[1][2] = +sin(-angle), +cos(-angle), z
-        M[2][0], M[2][1], M[2][2] =           0.,           0., 1.
+        M[2][0], M[2][1], M[2][2] = 0., 0., 1.
         return M
-
-
-
-
