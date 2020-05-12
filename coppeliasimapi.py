@@ -378,9 +378,8 @@ class CoppeliaSimAPI(object):
         obj1 = self.convert_to_valid_handle(obj1)
         obj2 = self.convert_to_valid_handle(obj2)
 
-        print(obj1, obj2)
-
-        return self.client.simxCheckCollision(obj1, obj2, call.get())
+        success, collision_state = self.client.simxCheckCollision(obj1, obj2, call.get())
+        return collision_state and success
 
     def set_collidable(self, obj, asynch=False):
         handle = self.convert_to_valid_handle(obj)
